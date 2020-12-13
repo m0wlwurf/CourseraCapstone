@@ -164,28 +164,46 @@ Noteworthy: The Number of unique words in the "all"-Corpus is 1816355, while the
 In order to use n-gram recognition, we need to store the text data in the VCorpus Format (Simple Corpus as used above is not supported). VCorpus seems to use a lot more memory. Therefore the overall corpus need to be split in sub-corpora. From trials, splitting in 10 sub-Corpora seems feasable.
 
 ```{r}
-tfm.3gram <- TermDocumentMatrix(VCorpus(VectorSource(NULL)))
+tdm.2gram <- TermDocumentMatrix(VCorpus(VectorSource(NULL)))
+tdm.3gram <- TermDocumentMatrix(VCorpus(VectorSource(NULL)))
+opts3gram <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
+opts2gram <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
 
 for (i in 1:10){
     l <- length(raw.all)
     it <- 1:(l/10) + (i-1)*(l/10)
     corp.sub <- VCorpus(VectorSource(raw.all[it]))
     
-    btm <- function(x) NGramTokenizer(x, Weka_control(min = 3, max = 3))
-    tdm.3gram <- c(tfm.3gram, TermDocumentMatrix(corp.sub, control = list(tokenize = btm)))
+    tdm.2gram <- c(tfm.2gram, TermDocumentMatrix(corp.sub, control = list(tokenize = opts2gram)))
+    tdm.3gram <- c(tfm.3gram, TermDocumentMatrix(corp.sub, control = list(tokenize = opts3gram)))
     print(paste("ngram-tdm: run",i, "/10 finished"))
 }
 
-term_freq.3gram <- sort(slam::row_sums(tfm.3gram), decreasing = TRUE)
+term_freq.2gram <- sort(slam::row_sums(tdm.2gram), decreasing = TRUE)
+term_freq.2gram <- term_freq.2gram / sum(term_freq.2gram)
+
+term_freq.3gram <- sort(slam::row_sums(tdm.3gram), decreasing = TRUE)
 term_freq.3gram <- term_freq.3gram / sum(term_freq.3gram)
 
-cum_term_freq.3gram <- cumsum(term_freq.3gram)
-plot(cum_term_freq.3gram[seq(1, length(cum_term_freq.3gram), by = length(cum_term_freq.3gram) / 1000)], x = seq(1, length(cum_term_freq.3gram), by = length(cum_term_freq.3gram) / 1000), 
-     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "en_US.all")
+cum_term_freq.2gram <- cumsum(term_freq.2gram)
+plot(cum_term_freq.2gram[seq(1, length(cum_term_freq.2gram), by = length(cum_term_freq.2gram) / 1000)], x = seq(1, length(cum_term_freq.2gram), by = length(cum_term_freq.2gram) / 1000), 
+     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "en_US.all 2grams")
 abline(h = .5, col = "green", lwd = 2)
 abline(h = .9, col = "blue", lwd = 2)
 
+cum_term_freq.3gram <- cumsum(term_freq.3gram)
+plot(cum_term_freq.3gram[seq(1, length(cum_term_freq.3gram), by = length(cum_term_freq.3gram) / 1000)], x = seq(1, length(cum_term_freq.3gram), by = length(cum_term_freq.3gram) / 1000), 
+     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "en_US.all 3grams")
+abline(h = .5, col = "green", lwd = 2)
+abline(h = .9, col = "blue", lwd = 2)
+
+barplot(term_freq.3gram[1:50], main = "2gram.sub", las = 2, cex.names = .8)
 barplot(term_freq.3gram[1:50], main = "3gram.sub", las = 2, cex.names = .8)
 ``` 
 
-``
+## Optional: Save Results
+```{r}
+saveRDS(tdm.en_US.all, "tdmenUSall.rds")
+saveRDS(tdm.2gram, "tdm2gram.rds")
+saveRDS(tdm.3gram, "tdm3gram.rds")
+```
