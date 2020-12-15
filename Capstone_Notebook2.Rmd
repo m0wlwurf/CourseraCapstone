@@ -1,0 +1,95 @@
+---
+title: "Coursera Data Science Spec. Capstone Project"
+author: "Felix m0wlwurf"
+date: "14 12 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+```
+
+## Libraries
+
+```{r}
+library(quanteda)
+```
+
+## Loading the Data
+
+```{r}
+setwd("~/R-Course/CourseraCapstone")
+
+con <- file("./final/en_US/en_US.blogs.txt")
+en_US.blogs <- readLines(con)
+close(con)
+
+con <- file("./final/en_US/en_US.news.txt")
+en_US.news <- readLines(con, skipNul = TRUE)
+close(con)
+
+con <- file("./final/en_US/en_US.twitter.txt")
+en_US.twitter <- readLines(con)
+close(con)
+
+en_US.all <- c(en_US.blogs, en_US.news, en_US.twitter)
+rm(list = "en_US.blogs", "en_US.news", "en_US.twitter") ##delete what is not needed anymore
+```
+
+## Seperating Training and Testing Data
+
+```{r}
+set.seed(1929)
+s <- 1:length(en_US.all)
+train <- sample(s, 0.7*length(en_US.all))
+en_US.train <- en_US.all[train]
+en_US.test <- en_US.all[-train]
+rm(list = "en_US.all")
+```
+
+## Term Frequency Analysis
+
+### Preparation
+
+```{r}
+c.en_US.train <- corpus(en_US.train)
+c.en_US.train.sent <- corpus_reshape(c.en_US.train, to = "sentences")
+ndoc(c.en_US.train)
+ndoc(c.en_US.train.sent)
+#sent.en_US.train <- tokens(c.en_US.train, what = "sentence") ##Basis for the rest: Sentences // calc time: ~ 10 minutes
+#rm(list = "c.en_US.train.sent")
+```
+
+### Single Words
+```{r}
+gc(full = TRUE)
+tok.1gram <- tokens(c.en_US.train.sent, remove_punct = TRUE)
+```
+
+### 2-grams
+```{r}
+## optional: garbage collection
+## rmlist <- ls()[-grep("tok.1gram",ls())]
+## rm(list = rmlist) 
+## gc(full = TRUE)
+
+tok.2gram <- tokens_ngrams(tok.1gram, n = 2)
+saveRDS(tok.2gram, "tok2gram.rds")
+```
+
+### 3-grams
+```{r}
+## optional: garbage collection
+## rmlist <- ls()[-grep("tok.1gram",ls())]
+## rm(list = rmlist) 
+## gc(full = TRUE)
+
+tok.3gram <- tokens_ngrams(tok.1gram, n = 3)
+saveRDS(tok.3gram, "tok3gram.rds")
+```
+
+### Optional: Restore saved files
+```{r, eval = FALSE}
+tok.2gram <- readRDS("tok2gram.rds")
+tok.3gram <- readRDS("tok3gram.rds")
+```
