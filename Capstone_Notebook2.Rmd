@@ -13,24 +13,21 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
 
 ```{r}
 library(quanteda)
+library(tidyverse)
+library(data.table)
 ```
 
 ## Loading the Data
 
+
 ```{r}
 setwd("~/R-Course/CourseraCapstone")
 
-con <- file("./final/en_US/en_US.blogs.txt")
-en_US.blogs <- readLines(con)
-close(con)
+en_US.blogs <- read_lines("./final/en_US/en_US.blogs.txt")
 
-con <- file("./final/en_US/en_US.news.txt")
-en_US.news <- readLines(con, skipNul = TRUE)
-close(con)
+en_US.news <- read_lines("./final/en_US/en_US.news.txt")
 
-con <- file("./final/en_US/en_US.twitter.txt")
-en_US.twitter <- readLines(con)
-close(con)
+en_US.twitter <- read_lines("./final/en_US/en_US.twitter.txt")
 
 en_US.all <- c(en_US.blogs, en_US.news, en_US.twitter)
 rm(list = "en_US.blogs", "en_US.news", "en_US.twitter") ##delete what is not needed anymore
@@ -64,32 +61,238 @@ ndoc(c.en_US.train.sent)
 ```{r}
 gc(full = TRUE)
 tok.1gram <- tokens(c.en_US.train.sent, remove_punct = TRUE)
+saveRDS(tok.1gram, "tok1gram.rds")
 ```
 
 ### 2-grams
 ```{r}
-## optional: garbage collection
-## rmlist <- ls()[-grep("tok.1gram",ls())]
-## rm(list = rmlist) 
-## gc(full = TRUE)
+##optional: garbage collection
+rmlist <- ls()[-grep("tok.1gram",ls())]
+rm(list = rmlist) 
+gc(full = TRUE)
 
 tok.2gram <- tokens_ngrams(tok.1gram, n = 2)
 saveRDS(tok.2gram, "tok2gram.rds")
 ```
 
+
 ### 3-grams
 ```{r}
-## optional: garbage collection
-## rmlist <- ls()[-grep("tok.1gram",ls())]
-## rm(list = rmlist) 
-## gc(full = TRUE)
+##optional: garbage collection
+rmlist <- ls()[-grep("tok.1gram",ls())]
+rm(list = rmlist) 
+gc(full = TRUE)
 
 tok.3gram <- tokens_ngrams(tok.1gram, n = 3)
 saveRDS(tok.3gram, "tok3gram.rds")
 ```
 
+### 4-grams
+```{r, eval = FALSE}
+##optional: garbage collection
+rmlist <- ls()[-grep("tok.1gram",ls())]
+rm(list = rmlist) 
+gc(full = TRUE)
+
+tok.4gram <- tokens_ngrams(tok.1gram, n = 4)
+saveRDS(tok.4gram, "tok4gram.rds")
+```
+
+
 ### Optional: Restore saved files
 ```{r, eval = FALSE}
+tok.1gram <- readRDS("tok1gram.rds")
 tok.2gram <- readRDS("tok2gram.rds")
 tok.3gram <- readRDS("tok3gram.rds")
 ```
+
+## Exploratory DA
+
+```{r}
+dfm.1gram <- dfm(tok.1gram)
+freq.1gram <- sort(colSums(dfm.1gram), decreasing = TRUE)
+
+dfm.2gram <- dfm(tok.2gram)
+freq.2gram <- sort(colSums(dfm.2gram), decreasing = TRUE)
+
+dfm.3gram <- dfm(tok.3gram)
+freq.3gram <- sort(colSums(dfm.3gram), decreasing = TRUE)
+
+saveRDS(dfm.1gram, "dfm.1gram.rds")
+saveRDS(dfm.2gram, "dfm.2gram.rds") 
+saveRDS(dfm.3gram, "dfm.3gram.rds") 
+
+```
+```{r, eval = FALSE}
+dfm.1gram <- readRDS("dfm.1gram.rds")
+dfm.2gram <- readRDS("dfm.2gram.rds")
+dfm.3gram <- readRDS("dfm.3gram.rds")
+```
+
+## 4-grams continued
+```{r, eval = FALSE}
+gc(full = TRUE)
+tok.4gram <- readRDS("tok4gram.rds")
+dfm.4gram <- dfm(tok.4gram)
+freq.4gram <- sort(colSums(dfm.4gram), decreasing = TRUE)
+
+saveRDS(dfm.4gram, "dfm.4gram.rds")
+saveRDS(freq.4gram, "freq.4gram.rds")
+```
+
+```{r}
+freq.1gram <- sort(colSums(dfm.1gram), decreasing = TRUE)
+freq.2gram <- sort(colSums(dfm.2gram), decreasing = TRUE)
+freq.3gram <- sort(colSums(dfm.3gram), decreasing = TRUE)
+
+format(object.size(freq.1gram), units = "GB")
+format(object.size(freq.2gram), units = "GB")
+format(object.size(freq.3gram), units = "GB")
+format(object.size(freq.4gram), units = "GB")
+
+saveRDS(freq.1gram, "freq.1gram.rds")
+saveRDS(freq.2gram, "freq.2gram.rds")
+saveRDS(freq.3gram, "freq.3gram.rds")
+
+```
+
+```{r}
+barplot(freq.1gram[1:50], main = "absolute freuqency: 1gram", las = 2, cex.names = .8)
+barplot(freq.2gram[1:50], main = "absolute frequency: 2gram", las = 2, cex.names = .8)
+barplot(freq.3gram[1:50], main = "absolute frequency: 3gram", las = 2, cex.names = .8)
+barplot(freq.4gram[1:50], main = "absolute frequency: 3gram", las = 2, cex.names = .8)
+```
+
+```{r, eval = FALSE}
+freq.1gram <- readRDS("freq.1gram.rds")
+freq.2gram <- readRDS("freq.2gram.rds")
+freq.3gram <- readRDS("freq.3gram.rds")
+freq.4gram <- readRDS("freq.4gram.rds")
+```
+
+```{r}
+cum.1gram <- cumsum(freq.1gram)/sum(freq.1gram)
+cum.2gram <- cumsum(freq.2gram)/sum(freq.2gram)
+cum.3gram <- cumsum(freq.3gram)/sum(freq.3gram)
+cum.4gram <- cumsum(freq.4gram)/sum(freq.4gram)
+```
+
+```{r, eval = FALSE}
+saveRDS(cum.1gram, "cum.1gram.rds")
+saveRDS(cum.2gram, "cum.2gram.rds")
+saveRDS(cum.3gram, "cum.3gram.rds")
+saveRDS(cum.4gram, "cum.4gram.rds")
+```
+
+```{r, eval = FALSE}
+cum.1gram <- readRDS("cum.1gram.rds")
+cum.2gram <- readRDS("cum.2gram.rds")
+cum.3gram <- readRDS("cum.3gram.rds")
+cum.4gram <- readRDS("cum.4gram.rds")
+```
+
+```{r}
+plot(cum.1gram[seq(1, length(cum.1gram), by = length(cum.1gram) / 1000)], x = seq(1, length(cum.1gram), by = length(cum.1gram) / 1000), 
+     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "1gram")
+abline(h = .5, col = "green", lwd = 2)
+abline(h = .9, col = "blue", lwd = 2)
+
+plot(cum.2gram[seq(1, length(cum.2gram), by = length(cum.2gram) / 1000)], x = seq(1, length(cum.2gram), by = length(cum.2gram) / 1000), 
+     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "2gram")
+abline(h = .5, col = "green", lwd = 2)
+abline(h = .9, col = "blue", lwd = 2)
+
+plot(cum.3gram[seq(1, length(cum.3gram), by = length(cum.3gram) / 1000)], x = seq(1, length(cum.3gram), by = length(cum.3gram) / 1000), 
+     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "3gram")
+abline(h = .5, col = "green", lwd = 2)
+abline(h = .9, col = "blue", lwd = 2)
+
+plot(cum.4gram[seq(1, length(cum.4gram), by = length(cum.4gram) / 1000)], x = seq(1, length(cum.4gram), by = length(cum.4gram) / 1000), 
+     type = "l", lwd = 2, col = "red", ylab = "cumulative sum over percentage", xlab = "Index", main = "4gram")
+abline(h = .5, col = "green", lwd = 2)
+abline(h = .9, col = "blue", lwd = 2)
+```
+
+```{r}
+i50.1gram <- max(which(cum.1gram < .5)) #how many words to cover 50% of coverage?
+pi50.1gram <- i50.1gram/length(cum.1gram)
+i90.1gram <- max(which(cum.1gram < .9)) #how many words to cover 90% of coverage?
+pi90.1gram <- i90.1gram/length(cum.1gram)
+
+i50.2gram <- max(which(cum.2gram < .5)) #how many words to cover 50% of coverage?
+pi50.2gram <- i50.2gram/length(cum.2gram)
+i90.2gram <- max(which(cum.2gram < .9)) #how many words to cover 90% of coverage?
+pi90.2gram <- i90.2gram/length(cum.2gram)
+
+i50.3gram <- max(which(cum.3gram < .5)) #how many words to cover 50% of coverage?
+pi50.3gram <- i50.3gram/length(cum.3gram)
+i90.3gram <- max(which(cum.3gram < .9)) #how many words to cover 90% of coverage?
+pi90.3gram <- i90.3gram/length(cum.3gram)
+
+i50.4gram <- max(which(cum.4gram < .5)) #how many words to cover 50% of coverage?
+pi50.4gram <- i50.4gram/length(cum.4gram)
+i90.4gram <- max(which(cum.4gram < .9)) #how many words to cover 90% of coverage?
+pi90.4gram <- i90.4gram/length(cum.4gram)
+
+smry.ngrams <- data.frame(ngram = c("1gram","2gram","3gram", "4gram"), tokens.to.cover.50p=c(i50.1gram, i50.2gram, i50.3gram, i.50.4gram), tokens.to.cover.90p = c(i90.1gram, i90.2gram, i90.3gram, i90.4gram), total.tokens = c(length(cum.1gram), length(cum.2gram), length(cum.3gram), length(cum.4gram)))
+print(smry.ngrams)
+```
+
+
+## shortened token-frequency-lists for memory economy
+```{r}
+shrt.1gram <- freq.1gram[1:i90.1gram]
+shrt.2gram <- freq.2gram[1:i90.2gram]
+shrt.3gram <- freq.3gram[1:i50.3gram]
+
+format(object.size(shrt.1gram), units = "GB")
+format(object.size(shrt.2gram), units = "GB")
+format(object.size(shrt.3gram), units = "GB")
+
+saveRDS(shrt.1gram, "shrt.1gram.rds")
+saveRDS(shrt.2gram, "shrt.2gram.rds")
+saveRDS(shrt.3gram, "shrt.3gram.rds")
+```
+
+```{r, eval = FALSE}
+shrt.1gram <- readRDS("shrt.1gram.rds")
+shrt.2gram <- readRDS("shrt.2gram.rds")
+shrt.3gram <- readRDS("shrt.3gram.rds")
+```
+
+### Create Data Structure with shorter query times for 3 gram
+```{r}
+sep.3gram_ <- strsplit(names(shrt.3gram), "_") ## how to ensure only ngram-delimters are "_"
+l.test <- unlist(lapply(sep.3gram_, length))
+sep.3gram_ <- sep.3gram_[-which(l.test > 3)] ##removes all lines which contain extra "_"-Characters
+shrt.3gram_ <- shrt.3gram[-which(l.test > 3)]
+sep.3gram <- matrix(unlist(sep.3gram_), ncol = 3, byrow = T)
+df.3gram <- data.table(first = sep.3gram[,1], second = sep.3gram[,2], third = sep.3gram[,3], prob = shrt.3gram_)
+saveRDS(df.3gram, "df.3gram.rds")
+```
+
+## Building a First Model
+
+```{r}
+user.input <- "i love"
+splt.user.input <- unlist(strsplit(user.input, " "))
+l.user.input <- length(splt.user.input)
+
+print(df.3gram[first == splt.user.input[l.user.input - 1] & second == splt.user.input[l.user.input]])
+
+```
+
+```{r, eval = FALSE}
+
+## old
+str.test <- "the mouse is on a roll"
+tks.test <- tokens(str.test)
+bi.test <- tokens_ngrams(tks.test, n = 2)
+ngram.search <- as.character(bi.test[[1]][length(bi.test[[1]])])
+
+## find all fitting 3grams (ONLY IF bi.test is non-empty):
+ind.3grams <- grep(paste0("^", ngram.search), names(shrt.3gram)) ## There is still a problem: if the ngram.search for example ends with "roll", it will include results for "rolling"
+shrt.3gram[ind.3grams]
+
+```
+
